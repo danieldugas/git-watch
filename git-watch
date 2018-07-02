@@ -97,16 +97,27 @@ if __name__=="__main__":
         if not ARGS.NO_FETCH:
             for remote in r_.remotes:
                 remote.fetch()
+        # Compare commits
         active_branch = r_.active_branch.name
-        remote_branch = r_.active_branch.tracking_branch().name
-        commits_behind = r_.iter_commits(active_branch + ".." + remote_branch)
-        commits_ahead  = r_.iter_commits(remote_branch + ".." + active_branch)
-        n_behind = sum(1 for c in commits_behind)
-        n_ahead = sum(1 for c in commits_ahead)
+        try:
+            remote_branch = r_.active_branch.tracking_branch().name
+        except AttributeError as e:
+            n_behind = 0
+            n_ahead = 0
+            remote_branch = None
+        else:
+            commits_behind = r_.iter_commits(active_branch + ".." + remote_branch)
+            commits_ahead  = r_.iter_commits(remote_branch + ".." + active_branch)
+            n_behind = sum(1 for c in commits_behind)
+            n_ahead = sum(1 for c in commits_ahead)
+        # Modified files
         modified = [ item.a_path for item in r_.index.diff(None) ]
         untracked = r_.untracked_files
 
         status_message = []
+        if remote_branch is None:
+            color = bcolors.WARNING
+            status_message.append("not tracking an upstream branch")
         if n_behind > 0:
             color = bcolors.WARNING
             status_message.append("{} commits behind upstream".format(n_behind))
