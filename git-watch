@@ -93,7 +93,7 @@ if __name__=="__main__":
 
     ## Add the current repo to repository list file if specified in args.
     if ARGS.ADD_THIS:
-        this_root = get_git_root(THIS_FILE)
+        this_root = get_git_root(os.getcwd())
         if this_root  in [os.path.abspath(p) for p in repo_paths]:
             warn("{} is already in {}".format(this_root, REPOLIST_FILENAME))
         else:
