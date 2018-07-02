@@ -29,6 +29,9 @@ Without this option, git-watch udpates the upstream information for your reposit
 #### --add-this-repo
 You're in your new favorite git repository, and want to quickly add it to the git_repos_to_watch.txt file? No hassle, let git-watch do it for you: ```git-watch --add-this-repo```.
 
+#### --bad-only
+Do you firmly believe in the saying, 'no news is good news'? Add this option, and only information about unsynced repositories will be printed.
+
 ## Uninstall
 
 It's okay, git-watch understands and loves you anyways. To remove it from your computer, delete ~/git_repos_to_watch.txt, remove the ```export PATH="$HOME/git-watch:$PATH"``` line in ~/.bashrc, and delete the ~/git-watch folder. 

@@ -18,7 +18,7 @@ parser.add_argument(
         '--quiet',
         dest='QUIET',
         action='store_true',
-        help='Do not print standard output (warnings and errors will still print).',
+        help='Do not print standard output (warnings and errors will still print)',
 )
 parser.add_argument(
         '--no-fetch',
@@ -32,6 +32,13 @@ parser.add_argument(
         action='store_true',
         help="Add the current repository to {}".format(REPOLIST_FILENAME),
 )
+parser.add_argument(
+        '--bad-only',
+        dest='BAD_ONLY',
+        action='store_true',
+        help='Do not output anything for repositories which are up to date',
+)
+
 ARGS = parser.parse_args()
 
 ## Definitions
@@ -46,7 +53,7 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 def warn(msg):
-    print(''.join([bcolors.WARNING, "WARN: ", msg, bcolors.ENDC]))
+    print(''.join([bcolors.WARNING, "WARNING: ", msg, bcolors.ENDC]))
     return
 
 def get_git_root(path):
@@ -140,6 +147,8 @@ if __name__=="__main__":
             status_message.append(msg)
         if not status_message:
             color = bcolors.OKGREEN
-            status_message = ["is up to date"]
+            if not ARGS.BAD_ONLY:
+                status_message = ["is up to date"]
         if not ARGS.QUIET:
-            print(''.join([color, str(dir_), " ", ' and '.join(status_message), bcolors.ENDC]))
+            if status_message:
+                print(''.join([color, str(dir_), " ", ' and '.join(status_message), bcolors.ENDC]))
