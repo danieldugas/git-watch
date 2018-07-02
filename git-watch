@@ -1,0 +1,129 @@
+#!/usr/bin/env python
+import os
+import sys
+import warnings
+import argparse
+import git
+HOME = os.path.abspath(os.path.expandvars("$HOME"))
+THIS_FILE = os.path.realpath(__file__)
+REPOLIST_FILENAME = "git_repos_to_watch.txt"
+REPOLIST_FILEPATH = os.path.join(HOME, REPOLIST_FILENAME)
+
+## Arguments
+parser = argparse.ArgumentParser(description='Keeps track of git repositories.')
+parser.add_argument(
+        '--quiet',
+        dest='QUIET',
+        action='store_true',
+        help='Do not print standard output (warnings and errors will still print).',
+)
+parser.add_argument(
+        '--no-fetch',
+        dest='NO_FETCH',
+        action='store_true',
+        help='Do not git fetch the repositories',
+)
+parser.add_argument(
+        '--add-this-repo',
+        dest='ADD_THIS',
+        action='store_true',
+        help="Add the current repository to {}".format(REPOLIST_FILENAME),
+)
+ARGS = parser.parse_args()
+
+## Definitions
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+def get_git_root(path):
+    """ Returns the root of the git repository containing 'path'. """
+    r_ = git.Repo(path, search_parent_directories=True)
+    return r_.git.rev_parse("--show-toplevel")
+
+def is_dir_else_warn(path):
+    """ Same as os.path.isdir but issues a warning if False """
+    isdir = os.path.isdir(path)
+    if not isdir:
+        warnings.warn("{} is not a directory.".format(path))
+    return isdir
+
+## Create default repository list file in $HOME if it does not exist.
+if not os.path.isfile(REPOLIST_FILEPATH):
+    warnings.warn(
+        "No {} file. creating default file in {}".format(REPOLIST_FILENAME, REPOLIST_FILEPATH)
+    )
+    with open(REPOLIST_FILEPATH, "w") as f_:
+        f_.write("# Add the locations of your Github repos to watch:")
+        this_git = get_git_root(THIS_FILE)
+        f_.write("\n{} # Git repository for git_watch".format(this_git))
+    quit()
+
+
+if __name__=="__main__":
+    # Read list of repos to watch.
+    with open(REPOLIST_FILEPATH, "r") as f_:
+        lines = f_.readlines()
+        # remove newlines and comments.
+        lines = [l.split('#')[0] for l in lines] # remove everything after first '#'
+        lines = [l.strip() for l in lines]
+        lines = [l for l in lines if l != ''] # no empty lines
+    # Check that repository paths exist.
+    repo_paths = [os.path.expanduser(l) for l in lines]
+    repo_paths = [dir_ for dir_ in repo_paths if is_dir_else_warn(dir_)]
+    repo_paths = list(set(repo_paths)) # filter duplicates
+
+    ## Add the current repo to repository list file if specified in args.
+    if ARGS.ADD_THIS:
+        this_root = get_git_root(THIS_FILE)
+        if this_root  in [os.path.abspath(p) for p in repo_paths]:
+            warnings.warn("{} is already in {}".format(this_root, REPOLIST_FILENAME))
+        else:
+            with open(REPOLIST_FILEPATH, "a") as f_:
+                f_.write("\n{}".format(this_root))
+            repo_paths.append(this_root)
+            if not ARGS.QUIET:
+                print("added {} to {}".format(this_root, REPOLIST_FILENAME))
+
+    ## Fetch and print status for each repo
+    for dir_ in repo_paths:
+        r_ = git.Repo(dir_)
+        if not ARGS.NO_FETCH:
+            for remote in r_.remotes:
+                remote.fetch()
+        active_branch = r_.active_branch.name
+        remote_branch = r_.active_branch.tracking_branch().name
+        commits_behind = r_.iter_commits(active_branch + ".." + remote_branch)
+        commits_ahead  = r_.iter_commits(remote_branch + ".." + active_branch)
+        n_behind = sum(1 for c in commits_behind)
+        n_ahead = sum(1 for c in commits_ahead)
+        modified = [ item.a_path for item in r_.index.diff(None) ]
+        untracked = r_.untracked_files
+
+        status_message = []
+        if n_behind > 0:
+            color = bcolors.WARNING
+            status_message.append("{} commits behind upstream".format(n_behind))
+        if n_ahead > 0:
+            color = bcolors.FAIL
+            status_message.append("{} commits ahead upstream".format(n_ahead))
+        has_modified_or_untracked = []
+        if modified:
+            has_modified_or_untracked.append("modified")
+        if untracked:
+            has_modified_or_untracked.append("untracked")
+        if has_modified_or_untracked:
+            color = bcolors.FAIL
+            msg = "has {} files".format(" and ".join(has_modified_or_untracked))
+            status_message.append(msg)
+        if not status_message:
+            color = bcolors.OKGREEN
+            status_message = ["is up to date"]
+        if not ARGS.QUIET:
+            print(''.join([color, str(dir_), " ", ' and '.join(status_message), bcolors.ENDC]))
