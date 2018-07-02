@@ -1,7 +1,10 @@
 #!/usr/bin/env python
+""" git-watch
+Author: Daniel Dugas
+"""
+from __future__ import print_function
 import os
 import sys
-import warnings
 import argparse
 import git
 HOME = os.path.abspath(os.path.expandvars("$HOME"))
@@ -42,6 +45,10 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+def warn(msg):
+    print(''.join([bcolors.WARNING, "WARN: ", msg, bcolors.ENDC]))
+    return
+
 def get_git_root(path):
     """ Returns the root of the git repository containing 'path'. """
     r_ = git.Repo(path, search_parent_directories=True)
@@ -51,20 +58,18 @@ def is_dir_else_warn(path):
     """ Same as os.path.isdir but issues a warning if False """
     isdir = os.path.isdir(path)
     if not isdir:
-        warnings.warn("{} is not a directory.".format(path))
+        warn("{} is not a directory.".format(path))
     return isdir
 
 ## Create default repository list file in $HOME if it does not exist.
 if not os.path.isfile(REPOLIST_FILEPATH):
-    warnings.warn(
+    warn(
         "No {} file. creating default file in {}".format(REPOLIST_FILENAME, REPOLIST_FILEPATH)
     )
     with open(REPOLIST_FILEPATH, "w") as f_:
         f_.write("# Add the locations of your Github repos to watch:")
         this_git = get_git_root(THIS_FILE)
         f_.write("\n{} # Git repository for git_watch".format(this_git))
-    quit()
-
 
 if __name__=="__main__":
     # Read list of repos to watch.
@@ -83,7 +88,7 @@ if __name__=="__main__":
     if ARGS.ADD_THIS:
         this_root = get_git_root(THIS_FILE)
         if this_root  in [os.path.abspath(p) for p in repo_paths]:
-            warnings.warn("{} is already in {}".format(this_root, REPOLIST_FILENAME))
+            warn("{} is already in {}".format(this_root, REPOLIST_FILENAME))
         else:
             with open(REPOLIST_FILEPATH, "a") as f_:
                 f_.write("\n{}".format(this_root))
