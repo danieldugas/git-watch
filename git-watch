@@ -170,12 +170,13 @@ if __name__=="__main__":
             for remote in r_.remotes:
                 remote.fetch()
         # Compare commits
-        active_branch = r_.active_branch.name
         try:
+            active_branch = r_.active_branch.name
             remote_branch = r_.active_branch.tracking_branch().name
         except AttributeError as e:
             n_behind = 0
             n_ahead = 0
+            active_branch = None
             remote_branch = None
         else:
             commits_behind = r_.iter_commits(active_branch + ".." + remote_branch)
