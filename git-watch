@@ -173,7 +173,7 @@ if __name__=="__main__":
         try:
             active_branch = r_.active_branch.name
             remote_branch = r_.active_branch.tracking_branch().name
-        except AttributeError as e:
+        except:
             n_behind = 0
             n_ahead = 0
             active_branch = None
