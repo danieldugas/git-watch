@@ -39,6 +39,10 @@ For example ```"~/*"``` will add all git repos inside your home folder, without 
 You can go deeper by adding fuzzy subdirectories (for example ```"~/*/*"```).
 Like grandpa always said, "enjoy yourself, but be aware that it can be inefficient to parse large directories".
 
+#### git space watch
+If you like coherence between git tools, ```git watch --no-fetch``` is also a valid invocation.
+(Thanks, [u/alfunx](http://reddit.com/u/alfunx)!)
+
 ## Uninstall
 
 It's okay, git-watch understands and loves you anyways.  
