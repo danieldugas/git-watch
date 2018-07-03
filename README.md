@@ -32,6 +32,13 @@ You're in your new favorite git repository, and want to quickly add it to the ``
 #### --bad-only
 Do you firmly believe in the saying, 'no news is good news'? Add this option, and only information about unsynced repositories will be printed.
 
+#### expanding stars
+*"We are all made of stars" - Moby*  
+adding fuzzy paths to your ```git_repos_to_watch.txt``` file tells git-watch to find all git repos in a certain directory.
+For example ```"~/*"``` will add all git repos inside your home folder, without recursion.
+You can go deeper by adding fuzzy subdirectories (for example ```"~/*/*"```).
+Like grandpa always said, "enjoy yourself, but be aware that it can be inefficient to parse large directories".
+
 ## Uninstall
 
 It's okay, git-watch understands and loves you anyways.  

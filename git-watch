@@ -68,6 +68,62 @@ def is_dir_else_warn(path):
         warn("{} is not a directory.".format(path))
     return isdir
 
+def expand_first_star(path):
+    """ Expands the first star in a path. """
+    new_paths = []
+    # A path is understood as "parent_dir/prefix*suffix/subdir"
+    l, r = path.split('*', 1)
+    ls_ = l.rsplit('/', 1)
+    rs_ = r.split('/', 1)
+    parent = ls_[0]
+    prefix = ls_[1] if len(ls_) == 2 else ''
+    suffix = rs_[0]
+    subdir = rs_[1] if len(rs_) == 2 else ''
+    subdir = subdir.strip('/') # fix things like "parent//subdir"
+    # list all subdirectories which could replace the star
+    if not is_dir_else_warn(parent):
+        return []
+    candidates = [d for d in os.listdir(parent) if
+            os.path.isdir(os.path.join(parent, d))] + ['']
+    candidates = [c for c in candidates if
+            c.startswith(prefix) and
+            c.endswith(suffix) and
+            len(c) >= ( len(suffix) + len(prefix) )
+    ]
+    new_paths = [os.path.join(parent, c, subdir) for c in candidates]
+    # remove fully expanded paths that don't resolve to directories
+    new_paths = [p for p in new_paths if '*' in p or os.path.isdir(p)]
+    verified_paths = []
+    for p in new_paths:
+        if '*' in p:
+            verified_paths.append(p)
+            continue
+        try:
+            git.Repo(p)
+            verified_paths.append(p)
+            continue
+        except:
+            continue
+    return verified_paths
+
+def expand_stars(paths):
+    """ Replace paths containing a '*' symbol with an entry for each subdirectory """
+    expanded_paths = []
+    paths_to_expand = list(paths) # copy
+    while True:
+        path = paths_to_expand.pop()
+        # expand once
+        if '*' in path:
+            new_paths = expand_first_star(path)
+            paths_to_expand = paths_to_expand + new_paths
+        else:
+            expanded_paths.append(path)
+        if not paths_to_expand:
+            break
+    # filter duplicates
+    expanded_paths = list(set(expanded_paths))
+    return expanded_paths
+
 ## Create default repository list file in $HOME if it does not exist.
 if not os.path.isfile(REPOLIST_FILEPATH):
     warn(
@@ -86,9 +142,13 @@ if __name__=="__main__":
         lines = [l.split('#')[0] for l in lines] # remove everything after first '#'
         lines = [l.strip() for l in lines]
         lines = [l for l in lines if l != ''] # no empty lines
-    # Check that repository paths exist.
+    # Expand users
     repo_paths = [os.path.expanduser(l) for l in lines]
+    # Expand '*' in paths
+    repo_paths = expand_stars(repo_paths)
+    # Check that paths are directories
     repo_paths = [dir_ for dir_ in repo_paths if is_dir_else_warn(dir_)]
+    # Filter duplicates
     repo_paths = list(set(repo_paths)) # filter duplicates
 
     ## Add the current repo to repository list file if specified in args.
