@@ -38,6 +38,12 @@ parser.add_argument(
         action='store_true',
         help='Do not output anything for repositories which are up to date',
 )
+parser.add_argument(
+        '--fast-forward',
+        dest='FAST_FORWARD',
+        action='store_true',
+        help="Execute 'git pull' command for all repositories which can be fast-forwarded",
+)
 
 ARGS = parser.parse_args()
 
@@ -183,17 +189,38 @@ if __name__=="__main__":
             commits_ahead  = r_.iter_commits(remote_branch + ".." + active_branch)
             n_behind = sum(1 for c in commits_behind)
             n_ahead = sum(1 for c in commits_ahead)
+
         # Modified files
         modified = [ item.a_path for item in r_.index.diff(None) ]
         untracked = r_.untracked_files
 
+        # Fast forward repo if desired
+        if (
+                ARGS.FAST_FORWARD
+                and n_ahead == 0
+                and n_behind > 0
+                and not modified
+                and not untracked
+                and remote_branch is not None ):
+            try:
+                for remote in r_.remotes:
+                    remote.pull(ff_only=True)
+                n_behind = 0
+            except:
+                warn("{} failed to fast-forward.")
+                continue
+
+        # Print colored status message
+        # Green: all ok
+        # Yellow: ok but should fast-forward before modifs. else potential merge issues
+        # Red: potential loss of work
         status_message = []
-        if remote_branch is None:
-            color = bcolors.WARNING
-            status_message.append("not tracking an upstream branch")
         if n_behind > 0:
             color = bcolors.WARNING
             status_message.append("{} commits behind upstream".format(n_behind))
+        if remote_branch is None:
+            color = bcolors.FAIL
+            status_message.append("not tracking an upstream branch")
         if n_ahead > 0:
             color = bcolors.FAIL
             status_message.append("{} commits ahead upstream".format(n_ahead))
