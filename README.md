@@ -1,4 +1,7 @@
 # git-watch
+
+** TODO: rename this tool to one of: git-hound, git-watchdog, git-light, git-trafficlight, git-seer, git-monitor, git-hero, git-news **
+
 A super simple python-based command-line tool to keep track of your git repositories.
 
 [![Demo git-watch](https://raw.githubusercontent.com/danieldugas/git-watch/master/demo.gif)]()
