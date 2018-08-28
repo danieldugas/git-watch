@@ -169,12 +169,20 @@ if __name__=="__main__":
             if not ARGS.QUIET:
                 print("added {} to {}".format(this_root, REPOLIST_FILENAME))
 
-    ## Fetch and print status for each repo
+    ## Fetch and print status for each repo.
     for dir_ in repo_paths:
         r_ = git.Repo(dir_)
+        # Fetch latest changes.
         if not ARGS.NO_FETCH:
-            for remote in r_.remotes:
-                remote.fetch()
+            try:
+                for remote in r_.remotes:
+                    remote.fetch()
+            except:
+                # warn only once (dirty)
+                try: _ = already_warned
+                except NameError: 
+                    warn("Fetch failed.")
+                    already_warned = 1
         # Compare commits
         try:
             active_branch = r_.active_branch.name
@@ -207,7 +215,7 @@ if __name__=="__main__":
                     remote.pull(ff_only=True)
                 n_behind = 0
             except:
-                warn("{} failed to fast-forward.")
+                warn("{} failed to fast-forward.".format(dir_))
                 continue
 
         # Print colored status message
@@ -223,7 +231,7 @@ if __name__=="__main__":
             status_message.append("not tracking an upstream branch")
         if n_ahead > 0:
             color = bcolors.FAIL
-            status_message.append("{} commits ahead upstream".format(n_ahead))
+            status_message.append("{} commits ahead of upstream".format(n_ahead))
         has_modified_or_untracked = []
         if modified:
             has_modified_or_untracked.append("modified")
