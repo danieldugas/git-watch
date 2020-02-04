@@ -223,28 +223,44 @@ if __name__=="__main__":
         # Yellow: ok but should fast-forward before modifs. else potential merge issues
         # Red: potential loss of work
         status_message = []
-        if n_behind > 0:
-            color = bcolors.WARNING
-            status_message.append("{} commits behind upstream".format(n_behind))
-        if remote_branch is None:
-            color = bcolors.FAIL
-            status_message.append("not tracking an upstream branch")
-        if n_ahead > 0:
-            color = bcolors.FAIL
-            status_message.append("{} commits ahead of upstream".format(n_ahead))
         has_modified_or_untracked = []
+        warn = False
+        critical = False
         if modified:
             has_modified_or_untracked.append("modified")
         if untracked:
             has_modified_or_untracked.append("untracked")
         if has_modified_or_untracked:
-            color = bcolors.FAIL
+            critical = True
             msg = "has {} files".format(" and ".join(has_modified_or_untracked))
             status_message.append(msg)
+        if remote_branch is None:
+            critical = True
+            status_message.append("is not tracking an upstream branch")
+        behind_and_ahead = []
+        upstream = ""
+        if n_behind > 0:
+            warn = True
+            s = "s" if n_behind > 1 else ""
+            behind_and_ahead.append("{} commit{} behind".format(n_behind, s))
+            upstream = " upstream ({})".format(remote_branch)
+        if n_ahead > 0:
+            critical = True
+            s = "s" if n_ahead > 1 else ""
+            behind_and_ahead.append("{} commit{} ahead".format(n_ahead, s))
+            upstream = " of upstream ({})".format(remote_branch)
+        if behind_and_ahead:
+            msg = "is " + ", ".join(behind_and_ahead) + upstream
+            status_message.append(msg)
         if not status_message:
-            color = bcolors.OKGREEN
             if not ARGS.BAD_ONLY:
                 status_message = ["is up to date"]
+        color = bcolors.OKGREEN
+        if warn:
+            color = bcolors.WARNING
+        if critical:
+            color = bcolors.FAIL
         if not ARGS.QUIET:
             if status_message:
-                print(''.join([color, str(dir_), " ", ' and '.join(status_message), bcolors.ENDC]))
+                branch_str = "({}) ".format(active_branch)
+                print(''.join([color, str(dir_), " ", branch_str, ' and '.join(status_message), bcolors.ENDC]))
