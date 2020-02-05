@@ -224,7 +224,7 @@ if __name__=="__main__":
         # Red: potential loss of work
         status_message = []
         has_modified_or_untracked = []
-        warn = False
+        warning = False
         critical = False
         if modified:
             has_modified_or_untracked.append("modified")
@@ -240,7 +240,7 @@ if __name__=="__main__":
         behind_and_ahead = []
         upstream = ""
         if n_behind > 0:
-            warn = True
+            warning = True
             s = "s" if n_behind > 1 else ""
             behind_and_ahead.append("{} commit{} behind".format(n_behind, s))
             upstream = " upstream ({})".format(remote_branch)
@@ -256,7 +256,7 @@ if __name__=="__main__":
             if not ARGS.BAD_ONLY:
                 status_message = ["is up to date"]
         color = bcolors.OKGREEN
-        if warn:
+        if warning:
             color = bcolors.WARNING
         if critical:
             color = bcolors.FAIL
