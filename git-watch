@@ -6,7 +6,11 @@ from __future__ import print_function
 import os
 import sys
 import argparse
-import git
+try:
+    import git
+except:
+    print("git-watch: GitPython not found. 'pip3 install GitPython'")
+    exit()
 HOME = os.path.abspath(os.path.expandvars("$HOME"))
 THIS_FILE = os.path.realpath(__file__)
 REPOLIST_FILENAME = "git_repos_to_watch.txt"
